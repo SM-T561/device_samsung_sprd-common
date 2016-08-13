@@ -118,17 +118,6 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
     }
 
     @Override
-    protected RadioState getRadioStateFromInt(int stateInt) {
-        RadioState state;
-        switch (stateInt) {
-        case 13: state = RadioState.RADIO_ON; break;
-        default:
-            state = super.getRadioStateFromInt(stateInt);
-        }
-        return state;
-    }
-
-    @Override
     protected Object responseFailCause(Parcel p) {
         int numInts = p.readInt();
         int response[] = new int[numInts];
