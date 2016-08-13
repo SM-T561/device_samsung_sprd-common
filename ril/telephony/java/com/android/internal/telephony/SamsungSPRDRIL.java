@@ -129,22 +129,4 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
             failCause.vendorCause = p.readString();
         return failCause;
     }
-
-    @Override
-    protected void notifyRegistrantsRilConnectionChanged(int rilVer) {
-        super.notifyRegistrantsRilConnectionChanged(rilVer);
-        if (rilVer != -1) {
-            if (mInstanceId != null) {
-                riljLog("Enable simultaneous data/voice on Multi-SIM");
-                invokeOemRilRequestSprd((byte) 3, (byte) 1, null);
-            } else {
-                riljLog("Set data subscription to allow data in either SIM slot when using single SIM mode");
-                setDataAllowed(true, null);
-            }
-        }
-    }
-
-    protected void invokeOemRilRequestSprd(byte key, byte value, Message response) {
-        invokeOemRilRequestRaw(new byte[] { 'S', 'P', 'R', 'D', key, value }, response);
-    }
 }
