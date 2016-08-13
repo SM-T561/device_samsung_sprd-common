@@ -41,6 +41,12 @@ import java.util.Collections;
  */
 public class SamsungSPRDRIL extends RIL implements CommandsInterface {
 
+    protected static final byte[] RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER;
+
+    static {
+        RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER = new byte[] { 0x09, 0x04 };
+    }
+
     public SamsungSPRDRIL(Context context, int preferredNetworkType, int cdmaSubscription) {
         this(context, preferredNetworkType, cdmaSubscription, null);
     }
@@ -79,10 +85,10 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
     public void setDataAllowed(boolean allowed, Message result) {
         int simId = mInstanceId == null ? 0 : mInstanceId;
         if (allowed) {
-            riljLog("Setting data subscription to sim [" + simId + "]");
-            invokeOemRilRequestRaw(new byte[] {0x9, 0x4}, result);
+            riljLog("setDataAllowed: set data subscription to sim [" + simId + "]");
+            invokeOemRilRequestRaw(RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER, result);
         } else {
-            riljLog("Do nothing when turn-off data on sim [" + simId + "]");
+            riljLog("setDataAllowed: do nothing when turn-off data on sim [" + simId + "]");
             if (result != null) {
                 AsyncResult.forMessage(result, 0, null);
                 result.sendToTarget();
