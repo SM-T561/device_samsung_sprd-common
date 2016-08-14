@@ -45,6 +45,7 @@ import java.util.Collections;
  */
 public class SamsungSPRDRIL extends RIL implements CommandsInterface {
 
+    public static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
     public static final int RIL_UNSOL_AM = 11010;
 
     protected static final byte[] RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER;
@@ -134,6 +135,9 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
         Object ret;
         try {
             switch (response) {
+            case RIL_UNSOL_DEVICE_READY_NOTI:
+                ret = responseVoid(p);
+                break;
             case RIL_UNSOL_AM:
                 ret = responseString(p);
                 break;
@@ -148,6 +152,9 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
             return;
         }
         switch (response) {
+        case RIL_UNSOL_DEVICE_READY_NOTI:
+            Rlog.d(RILJ_LOG_TAG, "Received DEVICE READY NOTIFICATION");
+            break;
         case RIL_UNSOL_AM: {
             String amString = (String) ret;
             Rlog.d(RILJ_LOG_TAG, "Executing AM: " + amString);
