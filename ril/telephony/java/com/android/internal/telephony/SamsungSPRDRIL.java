@@ -30,6 +30,10 @@ import android.telephony.ModemActivityInfo;
 import com.android.internal.telephony.uicc.SpnOverride;
 import com.android.internal.telephony.RILConstants;
 
+import java.io.IOException;
+
+import java.lang.Runtime;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +44,8 @@ import java.util.Collections;
  * {@hide}
  */
 public class SamsungSPRDRIL extends RIL implements CommandsInterface {
+
+    public static final int RIL_UNSOL_AM = 11010;
 
     protected static final byte[] RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER;
 
@@ -119,5 +125,40 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
         if (p.dataAvail() > 0)
             failCause.vendorCause = p.readString();
         return failCause;
+    }
+
+    @Override
+    protected void processUnsolicited(Parcel p) {
+        int originalDataPosition = p.dataPosition();
+        int response = p.readInt();
+        Object ret;
+        try {
+            switch (response) {
+            case RIL_UNSOL_AM:
+                ret = responseString(p);
+                break;
+            default:
+                p.setDataPosition(originalDataPosition);
+                super.processUnsolicited(p);
+                return;
+            }
+        } catch (Throwable tr) {
+            Rlog.e(RILJ_LOG_TAG, "Exception processing unsol response: " + response +
+                    "Exception:" + tr.toString());
+            return;
+        }
+        switch (response) {
+        case RIL_UNSOL_AM: {
+            String amString = (String) ret;
+            Rlog.d(RILJ_LOG_TAG, "Executing AM: " + amString);
+            try {
+                Runtime.getRuntime().exec("am " + amString);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Rlog.e(RILJ_LOG_TAG, "am " + amString + " could not be executed.");
+            }
+            break;
+        }
+        }
     }
 }
