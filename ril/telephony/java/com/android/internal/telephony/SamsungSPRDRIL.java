@@ -90,13 +90,12 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
 
     @Override
     public void setDataAllowed(boolean allowed, Message result) {
-        int simId = mInstanceId == null ? 0 : mInstanceId;
+        if (RILJ_LOGD) riljLog("setDataAllowed: allowed:" + allowed + " msg:" + result);
         if (allowed) {
-            riljLog("setDataAllowed: set data subscription to sim [" + simId + "]");
             invokeOemRilRequestRaw(RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER, result);
         } else {
-            riljLog("setDataAllowed: do nothing when turn-off data on sim [" + simId + "]");
             if (result != null) {
+                // Fake the response since we are doing nothing to disallow mobile data
                 AsyncResult.forMessage(result, 0, null);
                 result.sendToTarget();
             }
