@@ -47,6 +47,7 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
 
     public static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
     public static final int RIL_UNSOL_AM = 11010;
+    public static final int RIL_UNSOL_SIM_PB_READY = 11021;
 
     protected static final byte[] RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER;
 
@@ -140,6 +141,9 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
             case RIL_UNSOL_AM:
                 ret = responseString(p);
                 break;
+            case RIL_UNSOL_SIM_PB_READY:
+                ret = responseVoid(p);
+                break;
             default:
                 p.setDataPosition(originalDataPosition);
                 super.processUnsolicited(p);
@@ -165,6 +169,9 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
             }
             break;
         }
+        case RIL_UNSOL_SIM_PB_READY:
+            Rlog.d(RILJ_LOG_TAG, "Received RIL_UNSOL_SIM_PB_READY");
+            break;
         }
     }
 }
