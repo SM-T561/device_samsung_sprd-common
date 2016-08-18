@@ -107,7 +107,7 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
     public void getRadioCapability(Message response) {
         String rafString = mContext.getResources().getString(
             com.android.internal.R.string.config_radio_access_family);
-        riljLog("getRadioCapability: returning static radio capability [" + rafString + "]");
+        if (RILJ_LOGD) riljLog("getRadioCapability: returning static radio capability [" + rafString + "]");
         if (response != null) {
             Object ret = makeStaticRadioCapability();
             AsyncResult.forMessage(response, ret, null);
@@ -156,11 +156,11 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
         }
         switch (response) {
         case RIL_UNSOL_DEVICE_READY_NOTI:
-            Rlog.d(RILJ_LOG_TAG, "Received DEVICE READY NOTIFICATION");
+            if (RILJ_LOGD) riljLog("[UNSL]< UNSOL_DEVICE_READY_NOTI");
             break;
         case RIL_UNSOL_AM: {
             String amString = (String) ret;
-            Rlog.d(RILJ_LOG_TAG, "Executing AM: " + amString);
+            if (RILJ_LOGD) riljLog("[UNSL]< UNSOL_AM '" + amString + "'");
             try {
                 Runtime.getRuntime().exec("am " + amString);
             } catch (IOException e) {
@@ -170,7 +170,7 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
             break;
         }
         case RIL_UNSOL_SIM_PB_READY:
-            Rlog.d(RILJ_LOG_TAG, "Received RIL_UNSOL_SIM_PB_READY");
+            if (RILJ_LOGD) riljLog("[UNSL]< UNSOL_SIM_PB_READY");
             break;
         }
     }
