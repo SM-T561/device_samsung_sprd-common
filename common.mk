@@ -32,8 +32,7 @@ PRODUCT_PACKAGES += \
 # Device props
 PRODUCT_PROPERTY_OVERRIDES := \
 	keyguard.no_require_sim=true \
-	ro.com.android.dataroaming=false \
-	persist.sys.sprd.modemreset=0
+	ro.com.android.dataroaming=false
 
 # Compat
 PRODUCT_PACKAGES += \
