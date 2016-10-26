@@ -16,8 +16,6 @@
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 
-LOCAL_PATH := device/samsung/sprd-common
-
 # Audio
 PRODUCT_PACKAGES += \
 	audio.a2dp.default \
@@ -27,7 +25,6 @@ PRODUCT_PACKAGES += \
 
 # WiFi
 PRODUCT_PACKAGES += \
-	libnetcmdiface \
 	dhcpcd.conf \
 	wpa_supplicant \
 	hostapd
@@ -66,13 +63,16 @@ PERMISSION_XML_FILES := \
 	frameworks/native/data/etc/android.software.sip.xml \
 	frameworks/native/data/etc/android.software.sip.voip.xml \
 	frameworks/native/data/etc/android.hardware.usb.accessory.xml \
-	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml \
 
 PRODUCT_COPY_FILES += \
 	$(foreach f,$(PERMISSION_XML_FILES),$(f):system/etc/permissions/$(notdir $(f)))
 
 # Filesystem management tools
 PRODUCT_PACKAGES += \
+	f2fstat \
+	fibmap.f2fs \
+	fsck.f2fs \
+	mkfs.f2fs \
 	setup_fs \
 
 # Misc packages

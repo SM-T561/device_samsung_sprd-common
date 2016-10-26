@@ -30,6 +30,10 @@ import android.telephony.ModemActivityInfo;
 import com.android.internal.telephony.uicc.SpnOverride;
 import com.android.internal.telephony.RILConstants;
 
+import java.io.IOException;
+
+import java.lang.Runtime;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +44,16 @@ import java.util.Collections;
  * {@hide}
  */
 public class SamsungSPRDRIL extends RIL implements CommandsInterface {
+
+    public static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
+    public static final int RIL_UNSOL_AM = 11010;
+    public static final int RIL_UNSOL_SIM_PB_READY = 11021;
+
+    protected static final byte[] RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER;
+
+    static {
+        RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER = new byte[] { 0x09, 0x04 };
+    }
 
     public SamsungSPRDRIL(Context context, int preferredNetworkType, int cdmaSubscription) {
         this(context, preferredNetworkType, cdmaSubscription, null);
@@ -76,29 +90,13 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
     }
 
     @Override
-    public void setUiccSubscription(int appIndex, boolean activate, Message result) {
-        riljLog("setUiccSubscription " + appIndex + " " + activate);
-
-        // Fake response (note: should be sent before mSubscriptionStatusRegistrants or
-        // SubscriptionManager might not set the readiness correctly)
-        AsyncResult.forMessage(result, 0, null);
-        result.sendToTarget();
-
-        // TODO: Actually turn off/on the radio (and don't fight with the ServiceStateTracker)
-        if (mSubscriptionStatusRegistrants != null)
-            mSubscriptionStatusRegistrants.notifyRegistrants(
-                    new AsyncResult (null, new int[] { activate ? 1 : 0 }, null));
-    }
-
-    @Override
     public void setDataAllowed(boolean allowed, Message result) {
-        int simId = mInstanceId == null ? 0 : mInstanceId;
+        if (RILJ_LOGD) riljLog("setDataAllowed: allowed:" + allowed + " msg:" + result);
         if (allowed) {
-            riljLog("Setting data subscription to sim [" + simId + "]");
-            invokeOemRilRequestRaw(new byte[] {0x9, 0x4}, result);
+            invokeOemRilRequestRaw(RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER, result);
         } else {
-            riljLog("Do nothing when turn-off data on sim [" + simId + "]");
             if (result != null) {
+                // Fake the response since we are doing nothing to disallow mobile data
                 AsyncResult.forMessage(result, 0, null);
                 result.sendToTarget();
             }
@@ -109,23 +107,12 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
     public void getRadioCapability(Message response) {
         String rafString = mContext.getResources().getString(
             com.android.internal.R.string.config_radio_access_family);
-        riljLog("getRadioCapability: returning static radio capability [" + rafString + "]");
+        if (RILJ_LOGD) riljLog("getRadioCapability: returning static radio capability [" + rafString + "]");
         if (response != null) {
             Object ret = makeStaticRadioCapability();
             AsyncResult.forMessage(response, ret, null);
             response.sendToTarget();
         }
-    }
-
-    @Override
-    protected RadioState getRadioStateFromInt(int stateInt) {
-        RadioState state;
-        switch (stateInt) {
-        case 13: state = RadioState.RADIO_ON; break;
-        default:
-            state = super.getRadioStateFromInt(stateInt);
-        }
-        return state;
     }
 
     @Override
@@ -142,20 +129,49 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
     }
 
     @Override
-    protected void notifyRegistrantsRilConnectionChanged(int rilVer) {
-        super.notifyRegistrantsRilConnectionChanged(rilVer);
-        if (rilVer != -1) {
-            if (mInstanceId != null) {
-                riljLog("Enable simultaneous data/voice on Multi-SIM");
-                invokeOemRilRequestSprd((byte) 3, (byte) 1, null);
-            } else {
-                riljLog("Set data subscription to allow data in either SIM slot when using single SIM mode");
-                setDataAllowed(true, null);
+    protected void processUnsolicited(Parcel p) {
+        int originalDataPosition = p.dataPosition();
+        int response = p.readInt();
+        Object ret;
+        try {
+            switch (response) {
+            case RIL_UNSOL_DEVICE_READY_NOTI:
+                ret = responseVoid(p);
+                break;
+            case RIL_UNSOL_AM:
+                ret = responseString(p);
+                break;
+            case RIL_UNSOL_SIM_PB_READY:
+                ret = responseVoid(p);
+                break;
+            default:
+                p.setDataPosition(originalDataPosition);
+                super.processUnsolicited(p);
+                return;
             }
+        } catch (Throwable tr) {
+            Rlog.e(RILJ_LOG_TAG, "Exception processing unsol response: " + response +
+                    "Exception:" + tr.toString());
+            return;
         }
-    }
-
-    protected void invokeOemRilRequestSprd(byte key, byte value, Message response) {
-        invokeOemRilRequestRaw(new byte[] { 'S', 'P', 'R', 'D', key, value }, response);
+        switch (response) {
+        case RIL_UNSOL_DEVICE_READY_NOTI:
+            if (RILJ_LOGD) riljLog("[UNSL]< UNSOL_DEVICE_READY_NOTI");
+            break;
+        case RIL_UNSOL_AM: {
+            String amString = (String) ret;
+            if (RILJ_LOGD) riljLog("[UNSL]< UNSOL_AM '" + amString + "'");
+            try {
+                Runtime.getRuntime().exec("am " + amString);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Rlog.e(RILJ_LOG_TAG, "am " + amString + " could not be executed.");
+            }
+            break;
+        }
+        case RIL_UNSOL_SIM_PB_READY:
+            if (RILJ_LOGD) riljLog("[UNSL]< UNSOL_SIM_PB_READY");
+            break;
+        }
     }
 }
