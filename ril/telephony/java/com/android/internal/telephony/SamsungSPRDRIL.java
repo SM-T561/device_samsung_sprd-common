@@ -88,18 +88,32 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
 
         send(rr);
     }
-
+    // XXX: RIL crash after disabling airplane mode with mobile data enabled???
     @Override
     public void setDataAllowed(boolean allowed, Message result) {
-        if (RILJ_LOGD) riljLog("setDataAllowed: allowed:" + allowed + " msg:" + result);
-        if (allowed) {
-            invokeOemRilRequestRaw(RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER, result);
-        } else {
-            if (result != null) {
-                // Fake the response since we are doing nothing to disallow mobile data
-                AsyncResult.forMessage(result, 0, null);
-                result.sendToTarget();
+        boolean NeedsOldMethod = SystemProperties.getBoolean("ro.telephony.old_data_method", true);
+        if (NeedsOldMethod) {
+            if (RILJ_LOGD) riljLog("setDataAllowed: allowed:" + allowed + " msg:" + result);
+            if (allowed) {
+                invokeOemRilRequestRaw(RAW_HOOK_OEM_CMD_SWITCH_DATAPREFER, result);
+            } else {
+                if (result != null) {
+                    // Fake the response since we are doing nothing to disallow mobile data
+                    AsyncResult.forMessage(result, 0, null);
+                    result.sendToTarget();
+                }
             }
+        } else {
+            // Use the one from RIL.java
+            RILRequest rr = RILRequest.obtain(RIL_REQUEST_ALLOW_DATA, result);
+            if (RILJ_LOGD) {
+                riljLog(rr.serialString() + "> " + requestToString(rr.mRequest) +
+                        " allowed: " + allowed);
+            }
+
+            rr.mParcel.writeInt(1);
+            rr.mParcel.writeInt(allowed ? 1 : 0);
+            send(rr);
         }
     }
 
