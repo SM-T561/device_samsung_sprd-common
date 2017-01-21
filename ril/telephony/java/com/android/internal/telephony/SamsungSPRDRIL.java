@@ -104,6 +104,18 @@ public class SamsungSPRDRIL extends RIL implements CommandsInterface {
     }
 
     @Override
+    public void getRadioCapability(Message response) {
+        String rafString = mContext.getResources().getString(
+            com.android.internal.R.string.config_radio_access_family);
+        if (RILJ_LOGD) riljLog("getRadioCapability: returning static radio capability [" + rafString + "]");
+        if (response != null) {
+            Object ret = makeStaticRadioCapability();
+            AsyncResult.forMessage(response, ret, null);
+            response.sendToTarget();
+        }
+    }
+
+    @Override
     protected Object responseFailCause(Parcel p) {
         int numInts = p.readInt();
         int response[] = new int[numInts];
